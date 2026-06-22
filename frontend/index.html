@@ -76,9 +76,10 @@
     <section class="tab" id="tab-dashboard">
       <div class="dash-hero-row">
         <div class="dash-hero-disponible">
-          <span class="dash-hero-label">Disponible este mes</span>
+          <span class="dash-hero-label" id="dash-hero-label">Disponible este mes</span>
           <span class="dash-hero-monto" id="dash-disponible">₡0</span>
           <span class="dash-hero-delta" id="dash-disponible-delta"></span>
+          <span class="dash-hero-countdown" id="dash-hero-countdown"></span>
           <span class="dash-hero-sub" id="dash-disponible-sub"></span>
         </div>
         <div class="dash-hero-ritmo">
@@ -226,6 +227,12 @@
         </label>
         <label>Quincena 2
           <input type="number" id="cfg-salario-q2" step="1" min="0">
+        </label>
+        <label>Día de pago quincena 1
+          <input type="number" id="cfg-dia-pago-q1" step="1" min="1" max="31">
+        </label>
+        <label>Día de pago quincena 2
+          <input type="number" id="cfg-dia-pago-q2" step="1" min="1" max="31">
         </label>
         <label>Tipo de cambio (₡ por $1)
           <input type="number" id="cfg-tipo-cambio" step="0.01" min="0">

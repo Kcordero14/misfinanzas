@@ -7,7 +7,7 @@ from functools import wraps
 
 from flask import Flask, jsonify, request, send_from_directory, session, redirect
 from werkzeug.middleware.proxy_fix import ProxyFix
-from datetime import datetime
+from datetime import datetime, date
 import calendar
 import math
 import os
@@ -122,9 +122,17 @@ def put_configuracion(user_id):
     data = request.get_json()
     conn = get_connection()
     config_actual = conn.execute("SELECT * FROM configuracion WHERE user_id = ?", (user_id,)).fetchone()
+    dia_pago_q1 = data.get("dia_pago_q1", config_actual["dia_pago_q1"] if config_actual else 15)
+    dia_pago_q2 = data.get("dia_pago_q2", config_actual["dia_pago_q2"] if config_actual else 30)
+    # El día de pago de la quincena 1 siempre debe caer antes que el de la 2 dentro
+    # del mes; si los mandan invertidos, se intercambian para que el cálculo de
+    # "en qué quincena estamos hoy" no se rompa.
+    if dia_pago_q1 >= dia_pago_q2:
+        dia_pago_q1, dia_pago_q2 = dia_pago_q2, dia_pago_q1
     conn.execute(
         """UPDATE configuracion SET salario_total = ?, salario_q1 = ?, salario_q2 = ?,
-           salario_moneda = ?, tipo_cambio = ?, moneda_visualizacion = ?
+           salario_moneda = ?, tipo_cambio = ?, moneda_visualizacion = ?,
+           dia_pago_q1 = ?, dia_pago_q2 = ?
            WHERE user_id = ?""",
         (
             data["salario_total"],
@@ -133,6 +141,8 @@ def put_configuracion(user_id):
             data.get("salario_moneda", "CRC"),
             data.get("tipo_cambio", 520),
             data.get("moneda_visualizacion", config_actual["moneda_visualizacion"] if config_actual else "CRC"),
+            dia_pago_q1,
+            dia_pago_q2,
             user_id,
         ),
     )
@@ -1445,6 +1455,44 @@ def _convertir(monto, moneda_origen, moneda_destino, tipo_cambio):
     return monto
 
 
+def _fecha_de_pago(anio, mes, dia):
+    """Fecha real del día de pago en ese mes, recortada al último día si el mes
+    tiene menos días que el número configurado (ej: día 30 en febrero)."""
+    dias_mes = calendar.monthrange(anio, mes)[1]
+    return date(anio, mes, min(dia, dias_mes))
+
+
+def _calcular_quincena_actual(dia_pago_q1, dia_pago_q2, hoy):
+    """Determina en qué quincena cae 'hoy', según los días de pago configurados.
+    El período de cada quincena va desde su día de pago hasta el día de pago
+    siguiente (es la plata que hay que estirar hasta el próximo depósito)."""
+    anio, mes = hoy.year, hoy.month
+    pago_q1 = _fecha_de_pago(anio, mes, dia_pago_q1)
+    pago_q2 = _fecha_de_pago(anio, mes, dia_pago_q2)
+
+    if hoy < pago_q1:
+        anio_ant, mes_ant = (anio, mes - 1) if mes > 1 else (anio - 1, 12)
+        inicio = _fecha_de_pago(anio_ant, mes_ant, dia_pago_q2)
+        fin = pago_q1
+        quincena = "Q2"
+    elif hoy < pago_q2:
+        inicio = pago_q1
+        fin = pago_q2
+        quincena = "Q1"
+    else:
+        anio_sig, mes_sig = (anio, mes + 1) if mes < 12 else (anio + 1, 1)
+        inicio = pago_q2
+        fin = _fecha_de_pago(anio_sig, mes_sig, dia_pago_q1)
+        quincena = "Q2"
+
+    return {
+        "quincena": quincena,
+        "periodo_inicio": inicio,
+        "periodo_fin": fin,
+        "dias_para_proximo_pago": (fin - hoy).days,
+    }
+
+
 @app.route("/api/dashboard", methods=["GET"])
 @requiere_login
 def get_dashboard(user_id):
@@ -1593,6 +1641,56 @@ def get_dashboard(user_id):
     disponible = salario_total + ingresos_extra_total - total_fijos_presupuestado
     disponible_restante = disponible - total_variables
 
+    # ----- Disponible de la quincena actual -----
+    # Solo tiene sentido si el usuario cobra en dos quincenas, configuró sus días
+    # de pago, y está viendo el mes real de hoy (en otro mes no hay un "hoy" que
+    # ubicar dentro de una quincena).
+    hoy_fecha = datetime.now().date()
+    quincena_info = None
+    if config["salario_q1"] and config["salario_q2"] and mes == hoy_fecha.strftime("%Y-%m"):
+        q = _calcular_quincena_actual(config["dia_pago_q1"] or 15, config["dia_pago_q2"] or 30, hoy_fecha)
+        periodo_inicio_str = q["periodo_inicio"].strftime("%Y-%m-%d")
+        periodo_fin_str = q["periodo_fin"].strftime("%Y-%m-%d")
+        hoy_str = hoy_fecha.strftime("%Y-%m-%d")
+
+        salario_q1_conv = _a_moneda_base(config["salario_q1"] or 0, config["salario_moneda"], tipo_cambio)
+        salario_q2_conv = _a_moneda_base(config["salario_q2"] or 0, config["salario_moneda"], tipo_cambio)
+        salario_quincena = salario_q1_conv if q["quincena"] == "Q1" else salario_q2_conv
+
+        gastos_fijos_quincena = sum(
+            r["monto_q1"] if q["quincena"] == "Q1" else r["monto_q2"] for r in detalle_fijos
+        )
+
+        ingresos_extra_quincena = conn.execute(
+            "SELECT * FROM ingresos_extra WHERE user_id = ? AND fecha >= ? AND fecha < ?",
+            (user_id, periodo_inicio_str, periodo_fin_str),
+        ).fetchall()
+        ingresos_extra_quincena_total = sum(
+            _a_moneda_base(i["monto"], i["moneda"], tipo_cambio) for i in ingresos_extra_quincena
+        )
+
+        gasto_variable_quincena_rows = conn.execute(
+            """SELECT monto, moneda FROM transacciones
+               WHERE user_id = ? AND fecha >= ? AND fecha <= ?
+                 AND (origen_archivo IS NULL OR origen_archivo != 'pago_fijo')""",
+            (user_id, periodo_inicio_str, hoy_str),
+        ).fetchall()
+        gasto_variable_quincena = sum(
+            _a_moneda_base(r["monto"], r["moneda"], tipo_cambio) for r in gasto_variable_quincena_rows
+        )
+
+        disponible_quincena = (
+            salario_quincena + ingresos_extra_quincena_total - gastos_fijos_quincena - gasto_variable_quincena
+        )
+
+        quincena_info = {
+            "quincena": q["quincena"],
+            "periodo_inicio": periodo_inicio_str,
+            "periodo_fin": periodo_fin_str,
+            "dias_para_proximo_pago": q["dias_para_proximo_pago"],
+            "disponible_quincena": disponible_quincena,
+        }
+
     # ----- Ritmo de gasto diario (para el gráfico de tendencia del dashboard) -----
     # Suma de gasto variable "real" por día del mes: excluye pagos de rubros fijos,
     # aportes a ahorros y abonos a deudas (esos no son gasto de consumo del día).
@@ -1663,6 +1761,7 @@ def get_dashboard(user_id):
         "presupuesto_categorias": presupuesto_categorias,
         "disponible_mensual": disponible,
         "disponible_restante": disponible_restante,
+        "quincena_actual": quincena_info,
         "ritmo_diario": ritmo_diario,
         "ritmo_banda_inferior": banda_inferior,
         "ritmo_banda_superior": banda_superior,

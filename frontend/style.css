@@ -510,6 +510,14 @@ body {
   margin-top: 10px;
 }
 
+.dash-hero-countdown {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #C8E0DE;
+  margin-top: 8px;
+}
+.dash-hero-disponible.sobre-presupuesto .dash-hero-countdown { color: #F4C4B5; }
+
 .dash-hero-ritmo {
   background: var(--papel-tarjeta);
   border: 1px solid var(--linea);
@@ -2131,6 +2139,11 @@ button.boton-primario.boton-peligro {
   /* iOS hace zoom automático al enfocar un campo con font-size menor a 16px;
      se fuerza acá (sin tocar los tamaños de cada selector individual). */
   input, select, textarea { font-size: 16px !important; }
+
+  /* Los <select> no abren el teclado (muestran una rueda nativa), así que
+     no disparan el auto-zoom de iOS: se pueden mantener chicos para que
+     no llamen tanto la atención (filtros de arriba y el de cada fila). */
+  .select-categoria { font-size: 12.5px !important; }
 
   /* Tarjetas de objetivos/deudas: el nombre y los botones de acción
      (Aportar/Abonar/Calculadora/Editar/Eliminar) ya no caben en una sola

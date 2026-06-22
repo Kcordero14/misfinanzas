@@ -78,7 +78,9 @@ def init_db():
             salario_moneda TEXT NOT NULL DEFAULT 'CRC',
             tipo_cambio REAL NOT NULL DEFAULT 520,
             moneda_visualizacion TEXT NOT NULL DEFAULT 'CRC',
-            onboarding_completado INTEGER NOT NULL DEFAULT 0
+            onboarding_completado INTEGER NOT NULL DEFAULT 0,
+            dia_pago_q1 INTEGER NOT NULL DEFAULT 15,
+            dia_pago_q2 INTEGER NOT NULL DEFAULT 30
         )
     """)
     # Para bases ya existentes (creadas antes de este campo): las cuentas que ya
@@ -87,6 +89,10 @@ def init_db():
     # columna se deja en 0 después, para que sí aparezca en las cuentas nuevas.
     conn.execute("ALTER TABLE configuracion ADD COLUMN IF NOT EXISTS onboarding_completado INTEGER NOT NULL DEFAULT 1")
     conn.execute("ALTER TABLE configuracion ALTER COLUMN onboarding_completado SET DEFAULT 0")
+    # Días del mes (1-31) en que cae cada pago de quincena; se usan para saber en
+    # qué quincena estamos "hoy" y mostrar el disponible de la quincena actual.
+    conn.execute("ALTER TABLE configuracion ADD COLUMN IF NOT EXISTS dia_pago_q1 INTEGER NOT NULL DEFAULT 15")
+    conn.execute("ALTER TABLE configuracion ADD COLUMN IF NOT EXISTS dia_pago_q2 INTEGER NOT NULL DEFAULT 30")
     conn.commit()
 
     # Objetivos de largo plazo (colchón financiero, prima casa, etc.)

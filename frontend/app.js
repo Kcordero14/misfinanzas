@@ -325,9 +325,19 @@ async function renderOnboardingSalario() {
         <input type="checkbox" id="onb-salario-quincenas" ${config.salario_q1 > 0 && config.salario_q2 > 0 ? "checked" : ""}>
         Lo recibo en dos quincenas iguales
       </label>
+      <div id="onb-dias-pago" style="display:${config.salario_q1 > 0 && config.salario_q2 > 0 ? "block" : "none"};">
+        <p class="onboarding-paso-sub">¿Qué día del mes te pagan cada quincena? Así sabemos cuánto te queda disponible hasta tu próximo pago.</p>
+        <label>Día de pago quincena 1</label>
+        <input type="number" id="onb-dia-pago-q1" min="1" max="31" value="${config.dia_pago_q1 || 15}">
+        <label>Día de pago quincena 2</label>
+        <input type="number" id="onb-dia-pago-q2" min="1" max="31" value="${config.dia_pago_q2 || 30}">
+      </div>
       ${onboardingAcciones({ mostrarOmitir: true })}
     </div>
   `;
+  document.getElementById("onb-salario-quincenas").addEventListener("change", (e) => {
+    document.getElementById("onb-dias-pago").style.display = e.target.checked ? "block" : "none";
+  });
   conectarOnboardingAcciones({
     onContinuar: async () => {
       const total = parseFloat(document.getElementById("onb-salario-total").value) || 0;
@@ -336,6 +346,8 @@ async function renderOnboardingSalario() {
       if (total > 0) {
         const salario_q1 = dividir ? Math.round(total / 2) : total;
         const salario_q2 = dividir ? total - salario_q1 : 0;
+        const dia_pago_q1 = parseInt(document.getElementById("onb-dia-pago-q1").value) || 15;
+        const dia_pago_q2 = parseInt(document.getElementById("onb-dia-pago-q2").value) || 30;
         await api("/configuracion", {
           method: "PUT",
           body: JSON.stringify({
@@ -345,6 +357,8 @@ async function renderOnboardingSalario() {
             salario_moneda: moneda,
             tipo_cambio: config.tipo_cambio,
             moneda_visualizacion: config.moneda_visualizacion || moneda,
+            dia_pago_q1,
+            dia_pago_q2,
           }),
         });
       }
@@ -908,13 +922,31 @@ async function cargarDashboard() {
   monedaVisualizacion = data.moneda_visualizacion || "CRC";
   tipoCambioGlobal = data.tipo_cambio || tipoCambioGlobal;
 
-  document.getElementById("dash-disponible").textContent = formatoColones(data.disponible_restante);
-  document.getElementById("dash-disponible-sub").textContent = data.ingresos_extra_total
-    ? `de ${formatoColones(data.salario_total)} de salario + ${formatoColones(data.ingresos_extra_total)} extra`
-    : `de ${formatoColones(data.salario_total)} de salario`;
+  const labelEl = document.getElementById("dash-hero-label");
+  const countdownEl = document.getElementById("dash-hero-countdown");
   const deltaEl = document.getElementById("dash-disponible-delta");
-  const pasado = data.disponible_restante < 0;
-  deltaEl.textContent = pasado ? "Te pasaste del presupuesto" : "Disponible para gastar";
+  const q = data.quincena_actual;
+  let pasado;
+  if (q) {
+    labelEl.textContent = `Disponible quincena ${q.quincena === "Q1" ? "1" : "2"}`;
+    document.getElementById("dash-disponible").textContent = formatoColones(q.disponible_quincena);
+    const dias = q.dias_para_proximo_pago;
+    countdownEl.textContent = dias <= 0
+      ? "Hoy te pagan 🎉"
+      : `Faltan ${dias} día${dias === 1 ? "" : "s"} para tu próximo pago`;
+    document.getElementById("dash-disponible-sub").textContent = `${formatoColones(data.disponible_restante)} disponible en total este mes`;
+    pasado = q.disponible_quincena < 0;
+    deltaEl.textContent = pasado ? "Te pasaste de esta quincena" : "Disponible para gastar";
+  } else {
+    labelEl.textContent = "Disponible este mes";
+    document.getElementById("dash-disponible").textContent = formatoColones(data.disponible_restante);
+    countdownEl.textContent = "";
+    document.getElementById("dash-disponible-sub").textContent = data.ingresos_extra_total
+      ? `de ${formatoColones(data.salario_total)} de salario + ${formatoColones(data.ingresos_extra_total)} extra`
+      : `de ${formatoColones(data.salario_total)} de salario`;
+    pasado = data.disponible_restante < 0;
+    deltaEl.textContent = pasado ? "Te pasaste del presupuesto" : "Disponible para gastar";
+  }
   deltaEl.className = "dash-hero-delta " + (pasado ? "negativo" : "positivo");
   document.querySelector(".dash-hero-disponible").classList.toggle("sobre-presupuesto", pasado);
 
@@ -1193,14 +1225,19 @@ function abrirModalMarcarPago(rubroId, presupuestado, yaEstaPagado, montoQ1, mon
 
   const montosPorQuincena = { Q1: montoQ1, Q2: montoQ2 };
   const simbolo = moneda === "USD" ? "$" : "₡";
+  // El selector de quincena solo tiene sentido si el rubro está dividido en
+  // dos pagos; si no, mostrarlo confunde y permite elegir "Quincena 2" con
+  // un monto de 0 (la cuota completa va siempre en Q1).
+  const dividido = montoQ2 > 0;
 
   abrirModal(`
     <h3>Marcar rubro como pagado</h3>
+    ${dividido ? `
     <label>Quincena</label>
     <select id="modal-quincena">
       <option value="Q1">Quincena 1</option>
       <option value="Q2">Quincena 2</option>
-    </select>
+    </select>` : ""}
     <label>Monto pagado (${moneda === "USD" ? "Dólares" : "Colones"})</label>
     <input type="number" id="modal-monto" value="${montoQ1}" step="1">
     <div class="modal-acciones">
@@ -1209,12 +1246,14 @@ function abrirModalMarcarPago(rubroId, presupuestado, yaEstaPagado, montoQ1, mon
     </div>
   `);
 
-  document.getElementById("modal-quincena").addEventListener("change", (e) => {
-    document.getElementById("modal-monto").value = montosPorQuincena[e.target.value];
-  });
+  if (dividido) {
+    document.getElementById("modal-quincena").addEventListener("change", (e) => {
+      document.getElementById("modal-monto").value = montosPorQuincena[e.target.value];
+    });
+  }
 
   document.getElementById("modal-confirmar").addEventListener("click", async () => {
-    const quincena = document.getElementById("modal-quincena").value;
+    const quincena = dividido ? document.getElementById("modal-quincena").value : "Q1";
     const monto = parseFloat(document.getElementById("modal-monto").value);
     await api("/pagos-fijos", {
       method: "POST",
@@ -1291,8 +1330,8 @@ function renderObjetivos(objetivos, contenedorId, conAcciones) {
           <span class="meta-footer-valor">${formatoMonto(Math.max(o.monto_total - o.acumulado, 0), o.moneda)}</span>
         </div>
         <div class="meta-footer-item">
-          <span class="meta-mini-label">Aporte sugerido</span>
-          <span class="meta-footer-valor">${formatoMonto(o.aporte_mensual_sugerido, o.moneda)} /mes</span>
+          <span class="meta-mini-label">Aporte</span>
+          <span class="meta-footer-valor">${formatoMonto(o.aporte_mensual_sugerido, o.moneda)}</span>
         </div>
         <div class="meta-footer-item">
           <span class="meta-mini-label">A este ritmo</span>
@@ -2197,6 +2236,8 @@ async function cargarConfig() {
   document.getElementById("cfg-salario-q1").value = config.salario_q1 || "";
   document.getElementById("cfg-salario-q2").value = config.salario_q2 || "";
   document.getElementById("cfg-salario-moneda").value = config.salario_moneda || "CRC";
+  document.getElementById("cfg-dia-pago-q1").value = config.dia_pago_q1 || 15;
+  document.getElementById("cfg-dia-pago-q2").value = config.dia_pago_q2 || 30;
   document.getElementById("cfg-tipo-cambio").value = config.tipo_cambio || 520;
   document.getElementById("cfg-moneda-visualizacion").value = config.moneda_visualizacion || "CRC";
 
@@ -2345,7 +2386,9 @@ document.getElementById("form-salario").addEventListener("submit", async (e) => 
   const salario_moneda = document.getElementById("cfg-salario-moneda").value;
   const tipo_cambio = parseFloat(document.getElementById("cfg-tipo-cambio").value) || 0;
   const moneda_visualizacion = document.getElementById("cfg-moneda-visualizacion").value;
-  await api("/configuracion", { method: "PUT", body: JSON.stringify({ salario_total, salario_q1, salario_q2, salario_moneda, tipo_cambio, moneda_visualizacion }) });
+  const dia_pago_q1 = parseInt(document.getElementById("cfg-dia-pago-q1").value) || 15;
+  const dia_pago_q2 = parseInt(document.getElementById("cfg-dia-pago-q2").value) || 30;
+  await api("/configuracion", { method: "PUT", body: JSON.stringify({ salario_total, salario_q1, salario_q2, salario_moneda, tipo_cambio, moneda_visualizacion, dia_pago_q1, dia_pago_q2 }) });
   monedaVisualizacion = moneda_visualizacion;
   tipoCambioGlobal = tipo_cambio;
   alert("Salario actualizado");

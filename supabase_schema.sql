@@ -16,7 +16,10 @@ CREATE TABLE IF NOT EXISTS configuracion (
     salario_q2 REAL NOT NULL DEFAULT 0,
     salario_moneda TEXT NOT NULL DEFAULT 'CRC',
     tipo_cambio REAL NOT NULL DEFAULT 520,
-    moneda_visualizacion TEXT NOT NULL DEFAULT 'CRC'
+    moneda_visualizacion TEXT NOT NULL DEFAULT 'CRC',
+    onboarding_completado INTEGER NOT NULL DEFAULT 0,
+    dia_pago_q1 INTEGER NOT NULL DEFAULT 15,
+    dia_pago_q2 INTEGER NOT NULL DEFAULT 30
 );
 
 CREATE TABLE IF NOT EXISTS objetivos (
