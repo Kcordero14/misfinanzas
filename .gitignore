@@ -1,0 +1,16 @@
+# Variables de entorno con secretos (DATABASE_URL, claves de Supabase y Google) — nunca compartir ni subir a internet
+.env
+
+# Credenciales y sesión de Gmail de la versión anterior (desktop OAuth) — ya no se usan, pero por si quedan en disco
+backend/credenciales_gmail.json
+backend/token_gmail.json
+
+# Datos personales de la versión anterior (SQLite) — ya no se usan, pero por si quedan en disco
+data/finanzas.db
+
+# Python
+__pycache__/
+*.pyc
+
+# Configuración local de Claude Code (no es parte del proyecto)
+.claude/

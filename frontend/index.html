@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuentas — Plan financiero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-caja">
+    <span class="encabezado-eyebrow">Libro de cuentas</span>
+    <h1>Mis finanzas</h1>
+    <p class="auth-modo" id="auth-modo">Iniciar sesión</p>
+    <form id="form-auth">
+      <label>Correo
+        <input type="email" id="auth-correo" required autocomplete="email">
+      </label>
+      <label>Contraseña
+        <input type="password" id="auth-password" required autocomplete="current-password" minlength="6">
+      </label>
+      <p class="auth-error oculta" id="auth-error"></p>
+      <p class="auth-info oculta" id="auth-info"></p>
+      <button type="submit" class="boton-primario" id="auth-submit">Entrar</button>
+    </form>
+    <p class="auth-toggle">
+      <span id="auth-toggle-texto">¿No tenés cuenta?</span>
+      <button type="button" class="auth-toggle-btn" id="btn-auth-toggle">Crear cuenta</button>
+    </p>
+  </div>
+</div>
+
+<div class="cuaderno oculta" id="app-shell">
+
+  <header class="encabezado">
+    <div class="encabezado-titulo">
+      <span class="encabezado-eyebrow">Libro de cuentas</span>
+      <h1>Mis finanzas</h1>
+    </div>
+    <div class="encabezado-mes">
+      <label for="selector-mes">Mes activo</label>
+      <input type="month" id="selector-mes">
+    </div>
+    <button class="boton-texto" id="btn-logout">Cerrar sesión</button>
+  </header>
+
+  <button class="menu-movil-toggle" id="btn-menu-movil" aria-expanded="false" aria-controls="pestanas">
+    <span id="menu-movil-label">Dashboard</span>
+    <span class="menu-movil-icono">☰</span>
+  </button>
+
+  <nav class="pestanas" id="pestanas">
+    <button class="pestana activa" data-tab="dashboard">
+      <span class="pestana-num">01</span> Dashboard
+    </button>
+    <button class="pestana" data-tab="objetivos">
+      <span class="pestana-num">02</span> Ahorros
+    </button>
+    <button class="pestana" data-tab="deudas">
+      <span class="pestana-num">03</span> Deudas
+    </button>
+    <button class="pestana" data-tab="gastos">
+      <span class="pestana-num">04</span> Transacciones
+    </button>
+    <button class="pestana" data-tab="config">
+      <span class="pestana-num">⚙</span> Configurar
+    </button>
+  </nav>
+
+  <main class="contenido">
+
+    <!-- TAB 1: DASHBOARD -->
+    <section class="tab" id="tab-dashboard">
+      <div class="dash-hero-row">
+        <div class="dash-hero-disponible">
+          <span class="dash-hero-label">Disponible este mes</span>
+          <span class="dash-hero-monto" id="dash-disponible">₡0</span>
+          <span class="dash-hero-delta" id="dash-disponible-delta"></span>
+          <span class="dash-hero-sub" id="dash-disponible-sub"></span>
+        </div>
+        <div class="dash-hero-ritmo">
+          <div class="dash-ritmo-header">
+            <div>
+              <span class="dash-ritmo-titulo-mini">Tu ritmo de gasto diario</span>
+              <h3 class="dash-ritmo-titulo" id="dash-ritmo-titulo">—</h3>
+            </div>
+            <div class="dash-ritmo-leyenda">
+              <span><span class="dash-ritmo-leyenda-linea"></span>Este mes</span>
+              <span><span class="dash-ritmo-leyenda-banda"></span>Rango normal</span>
+              <span><span class="dash-ritmo-leyenda-caro"></span>Días caros</span>
+            </div>
+          </div>
+          <div id="dash-grafico-ritmo"></div>
+          <p class="dash-ritmo-nota" id="dash-ritmo-nota"></p>
+        </div>
+      </div>
+
+      <div class="dash-segmentos">
+        <button class="dash-segmento activo" data-segmento="fijos">
+          <span class="dash-segmento-titulo">Gastos fijos</span>
+          <span class="dash-segmento-sub" id="seg-fijos-sub">—</span>
+        </button>
+        <button class="dash-segmento" data-segmento="variables">
+          <span class="dash-segmento-titulo">Gastos variables</span>
+          <span class="dash-segmento-sub">Presupuesto</span>
+        </button>
+      </div>
+
+      <div class="dash-panel" id="dash-panel-fijos">
+        <div class="dash-panel-header">
+          <h2>Gastos fijos del mes <span class="contador-pill" id="dash-fijos-contador"></span></h2>
+          <button class="boton-secundario" id="btn-dash-nuevo-rubro">+ Agregar</button>
+        </div>
+        <div class="grafico-contenedor dash-fijos-panel">
+          <div id="dash-lista-fijos" class="lista-rubros"></div>
+        </div>
+      </div>
+
+      <div class="dash-panel oculto-panel" id="dash-panel-variables">
+        <div class="dash-panel-header">
+          <h2>Presupuesto por categoría <span class="bloque-hint">gastado vs disponible este mes</span></h2>
+        </div>
+        <div id="dash-grafico-barras" class="grafico-contenedor"></div>
+        <div class="dash-panel-header" style="margin-top:26px;">
+          <h2>Gastos variables por categoría <span class="bloque-hint">sobre lo disponible tras los gastos fijos</span></h2>
+        </div>
+        <div id="dash-lista-variables" class="grafico-contenedor"></div>
+      </div>
+    </section>
+
+    <!-- TAB 2: AHORROS / OBJETIVOS LARGO PLAZO -->
+    <section class="tab oculta" id="tab-objetivos">
+      <div id="ahorros-hero"></div>
+      <div class="bloque-header-accion">
+        <h2>Objetivos de largo plazo</h2>
+        <button class="boton-primario" id="btn-nuevo-objetivo">+ Nuevo objetivo</button>
+      </div>
+      <div id="lista-objetivos" class="lista-objetivos"></div>
+    </section>
+
+    <!-- TAB 3: DEUDAS -->
+    <section class="tab oculta" id="tab-deudas">
+      <div id="deudas-hero"></div>
+      <div class="bloque-header-accion">
+        <h2>Deudas</h2>
+        <button class="boton-primario boton-peligro" id="btn-nueva-deuda">+ Nueva deuda</button>
+      </div>
+      <div id="lista-deudas" class="lista-objetivos"></div>
+    </section>
+
+    <!-- TAB 4: GASTOS MENSUALES -->
+    <section class="tab oculta" id="tab-gastos">
+
+      <div class="bloque-gmail" id="bloque-gmail">
+        <div class="bloque-gmail-info">
+          <div>
+            <strong id="gmail-titulo">Sincronizar con Gmail</strong>
+            <p id="gmail-subtitulo" class="bloque-hint">Trae automáticamente los correos nuevos de tu etiqueta</p>
+          </div>
+        </div>
+        <button class="boton-primario" id="btn-sincronizar-gmail">Sincronizar ahora</button>
+      </div>
+      <div id="resultado-sync-gmail" class="resultado-importacion oculta"></div>
+
+      <details class="zona-importar-manual">
+        <summary>O importar archivos .eml manualmente</summary>
+        <div class="zona-importar" id="zona-importar">
+          <input type="file" id="input-correos" accept=".eml" multiple hidden>
+          <div class="zona-importar-contenido">
+            <p><strong>Arrastrá tus correos de notificación</strong> aquí, o</p>
+            <button class="boton-secundario" id="btn-elegir-archivos">elegí los archivos .eml</button>
+            <p class="zona-importar-nota">Se detectan duplicados automáticamente por número de referencia.</p>
+          </div>
+        </div>
+        <div id="resultado-importacion" class="resultado-importacion oculta"></div>
+      </details>
+
+      <div class="bloque-header-accion">
+        <h2>Transacciones del mes</h2>
+        <div class="filtros-transacciones">
+          <select id="filtro-categoria-transacciones" class="select-categoria filtro-select">
+            <option value="">Todas las categorías</option>
+          </select>
+          <select id="orden-transacciones" class="select-categoria filtro-select">
+            <option value="fecha-desc">Fecha: más reciente</option>
+            <option value="fecha-asc">Fecha: más antigua</option>
+            <option value="monto-desc">Monto: mayor a menor</option>
+            <option value="monto-asc">Monto: menor a mayor</option>
+          </select>
+          <button class="boton-secundario" id="btn-agregar-manual">+ Agregar a mano</button>
+        </div>
+      </div>
+      <div id="tabla-transacciones" class="tabla-transacciones"></div>
+    </section>
+
+    <!-- TAB CONFIG -->
+    <section class="tab oculta" id="tab-config">
+      <h2>Conexión con Gmail</h2>
+      <div class="bloque-config-gmail">
+        <label>Nombre de la etiqueta de Gmail a sincronizar</label>
+        <div class="fila-etiqueta-gmail">
+          <input type="text" id="cfg-etiqueta-gmail" placeholder="Compras">
+          <button class="boton-secundario" id="btn-guardar-etiqueta">Guardar</button>
+        </div>
+        <p class="bloque-hint" id="cfg-gmail-estado-texto" style="margin-top:10px;"></p>
+        <button class="boton-secundario" id="btn-conectar-gmail" style="display:none; margin-top:6px;">Conectar Gmail</button>
+        <button class="boton-texto" id="btn-desconectar-gmail" style="display:none;">Desconectar cuenta de Gmail</button>
+      </div>
+
+      <h2>Salario y quincenas</h2>
+      <form id="form-salario" class="formulario-inline">
+        <label>Salario total mensual
+          <input type="number" id="cfg-salario-total" step="1" min="0">
+        </label>
+        <label>Moneda del salario
+          <select id="cfg-salario-moneda">
+            <option value="CRC">Colones (CRC)</option>
+            <option value="USD">Dólares (USD)</option>
+          </select>
+        </label>
+        <label>Quincena 1
+          <input type="number" id="cfg-salario-q1" step="1" min="0">
+        </label>
+        <label>Quincena 2
+          <input type="number" id="cfg-salario-q2" step="1" min="0">
+        </label>
+        <label>Tipo de cambio (₡ por $1)
+          <input type="number" id="cfg-tipo-cambio" step="0.01" min="0">
+        </label>
+        <label>Moneda para mostrar montos en toda la app
+          <select id="cfg-moneda-visualizacion">
+            <option value="CRC">Colones (CRC)</option>
+            <option value="USD">Dólares (USD)</option>
+          </select>
+        </label>
+        <button type="submit" class="boton-primario">Guardar</button>
+      </form>
+
+      <div class="bloque-header-accion">
+        <h2>Rubros de gastos fijos</h2>
+        <button class="boton-secundario" id="btn-nuevo-rubro">+ Nuevo rubro</button>
+      </div>
+      <div id="lista-rubros-config" class="lista-rubros-config"></div>
+
+      <div class="bloque-header-accion">
+        <h2>Categorías de gastos variables</h2>
+        <button class="boton-secundario" id="btn-nueva-categoria">+ Nueva categoría</button>
+      </div>
+      <div id="lista-categorias-config" class="lista-categorias-config"></div>
+    </section>
+
+  </main>
+
+  <!-- Botón flotante de acciones rápidas -->
+  <div class="fab-contenedor" id="fab-contenedor">
+    <div class="fab-menu oculta" id="fab-menu">
+      <button class="fab-opcion" id="fab-ingreso-extra">Ingreso extraordinario</button>
+      <button class="fab-opcion" id="fab-gasto-manual">Registrar gasto</button>
+      <button class="fab-opcion" id="fab-aportar-ahorro">Aportar a un ahorro</button>
+      <button class="fab-opcion" id="fab-abonar-deuda">Abonar a una deuda</button>
+    </div>
+    <button class="fab-boton" id="fab-boton" title="Acciones rápidas">+</button>
+  </div>
+
+  <!-- Modal genérico reutilizable -->
+  <div class="modal-overlay oculta" id="modal-overlay">
+    <div class="modal" id="modal-contenido"></div>
+  </div>
+
+  <!-- Carrusel de bienvenida (solo usuarios nuevos) -->
+  <div class="onboarding-overlay oculta" id="onboarding-overlay">
+    <div class="onboarding-caja">
+      <div class="onboarding-topbar">
+        <div class="onboarding-puntos" id="onboarding-puntos"></div>
+        <button class="boton-texto" id="onboarding-omitir-todo">Omitir todo</button>
+      </div>
+      <div class="onboarding-contenido" id="onboarding-contenido"></div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

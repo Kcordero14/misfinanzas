@@ -1,0 +1,8 @@
+flask
+gunicorn
+psycopg2-binary
+requests
+python-dotenv
+google-auth
+google-auth-oauthlib
+google-api-python-client
