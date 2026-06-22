@@ -889,7 +889,7 @@ def marcar_pago_fijo(user_id):
     # Si el rubro está vinculado a una deuda, el pago de la cuota reduce el saldo
     if rubro_row and rubro_row["deuda_id"]:
         conn.execute(
-            "UPDATE deudas SET saldo_actual = MAX(saldo_actual - ?, 0) WHERE id = ? AND user_id = ?",
+            "UPDATE deudas SET saldo_actual = GREATEST(saldo_actual - ?, 0) WHERE id = ? AND user_id = ?",
             (monto, rubro_row["deuda_id"], user_id),
         )
 
