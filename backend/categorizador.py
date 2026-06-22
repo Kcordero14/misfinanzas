@@ -27,7 +27,7 @@ PALABRAS_CLAVE = {
         "UBER", "DIDI", "INDRIVE", "GASOLINERA", "SERVICENTRO", "DELTA",
         "RECOPE", "GAS STATION", "ESTACION", "TAXI", "PARKING", "PARQUEO",
     ],
-    "Entretenimiento": [
+    "Ocio": [
         "CINEMARK", "CINE", "NOVA CINEMAS", "NETFLIX", "SPOTIFY", "DISNEY",
         "HBO", "STEAM", "PLAYSTATION", "XBOX", "TEATRO", "CONCIERTO",
     ],

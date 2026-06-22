@@ -514,7 +514,7 @@ const AHORROS_SUGERENCIAS = [
   { nombre: "Viaje", emoji: "✈️" },
   { nombre: "Casa propia", emoji: "🏠" },
   { nombre: "Carro", emoji: "🚗" },
-  { nombre: "Pensión complementaria", emoji: "👴" },
+  { nombre: "Retiro", emoji: "👴" },
   { nombre: "Estudios", emoji: "🎓" },
   { nombre: "Boda", emoji: "💍" },
 ];

@@ -22,7 +22,7 @@ CATEGORIAS_DEFAULT = [
     ("Comida", "#B5533C", "🍔"),
     ("Súper", "#2E5E45", "🛒"),
     ("Transporte", "#3D6FB5", "🚌"),
-    ("Entretenimiento", "#C49A3D", "🎉"),
+    ("Ocio", "#C49A3D", "🎉"),
     ("Salud", "#7A4FB5", "💊"),
     ("Ropa", "#B54F8C", "👕"),
     ("Cuidado personal", "#1E8A99", "💅"),

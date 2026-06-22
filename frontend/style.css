@@ -2117,6 +2117,10 @@ button.boton-primario.boton-peligro {
 
 /* ===== Responsive ===== */
 @media (max-width: 720px) {
+  /* iOS hace zoom automático al enfocar un campo con font-size menor a 16px;
+     se fuerza acá (sin tocar los tamaños de cada selector individual). */
+  input, select, textarea { font-size: 16px !important; }
+
   .dash-hero-row { grid-template-columns: 1fr; }
   .grilla-anillos-categoria { grid-template-columns: 1fr; }
   .dash-segmento { padding: 12px 13px; }
