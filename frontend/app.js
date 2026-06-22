@@ -1875,9 +1875,10 @@ function renderTransacciones() {
           <span class="fila-transaccion-fecha" ${estiloFecha}>${formatoFecha(t.fecha)}</span>
           <span class="fila-transaccion-comercio">${t.comercio}<span class="etiqueta-origen">${origen.etiqueta}</span></span>
           <span class="select-categoria fila-transaccion-sin-categoria">—</span>
-          <span class="fila-transaccion-monto fila-transaccion-monto-ingreso">+${formatoConvertido(t.monto, t.moneda)} ${notaMonedaOriginal(t.monto, t.moneda)}</span>
-          <span></span>
-          <button class="fila-transaccion-borrar" data-borrar-ingreso="${t.id}" title="Eliminar">✕</button>
+          <div class="fila-transaccion-derecha">
+            <span class="fila-transaccion-monto fila-transaccion-monto-ingreso">+${formatoConvertido(t.monto, t.moneda)} ${notaMonedaOriginal(t.monto, t.moneda)}</span>
+            <button class="fila-transaccion-borrar" data-borrar-ingreso="${t.id}" title="Eliminar">✕</button>
+          </div>
         </div>`;
     }
     const categoria = categorias.find((c) => c.id === t.categoria_id);
@@ -1890,9 +1891,11 @@ function renderTransacciones() {
         <select class="select-categoria" data-trans-id="${t.id}">
           ${categorias.map((c) => `<option value="${c.id}" ${c.id === t.categoria_id ? "selected" : ""}>${c.nombre}</option>`).join("")}
         </select>
-        <span class="fila-transaccion-monto">${formatoConvertido(t.monto, t.moneda)} ${notaMonedaOriginal(t.monto, t.moneda)}</span>
-        <button class="fila-transaccion-editar" data-editar-trans="${t.id}" title="Editar">✎</button>
-        <button class="fila-transaccion-borrar" data-borrar-trans="${t.id}" title="Eliminar">✕</button>
+        <div class="fila-transaccion-derecha">
+          <span class="fila-transaccion-monto">${formatoConvertido(t.monto, t.moneda)} ${notaMonedaOriginal(t.monto, t.moneda)}</span>
+          <button class="fila-transaccion-editar" data-editar-trans="${t.id}" title="Editar">✎</button>
+          <button class="fila-transaccion-borrar" data-borrar-trans="${t.id}" title="Eliminar">✕</button>
+        </div>
       </div>`;
   }).join("");
 

@@ -795,6 +795,7 @@ body {
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--navy);
+  overflow-wrap: anywhere;
 }
 
 .tarjeta-objetivo-meta {
@@ -1105,9 +1106,19 @@ body {
   border-radius: 10px;
   padding: 11px 15px;
   display: grid;
-  grid-template-columns: 90px 1fr 160px 110px auto auto;
+  grid-template-columns: 90px 1fr 160px auto;
   align-items: center;
   gap: 14px;
+}
+
+.fila-transaccion-derecha {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.fila-transaccion-derecha .fila-transaccion-monto {
+  margin-right: 5px;
 }
 
 .fila-transaccion.origen-ingreso { background: var(--verde-suave); }
@@ -2121,6 +2132,36 @@ button.boton-primario.boton-peligro {
      se fuerza acá (sin tocar los tamaños de cada selector individual). */
   input, select, textarea { font-size: 16px !important; }
 
+  /* Tarjetas de objetivos/deudas: el nombre y los botones de acción
+     (Aportar/Abonar/Calculadora/Editar/Eliminar) ya no caben en una sola
+     fila junto al nombre, así que se apilan y los botones se envuelven. */
+  .tarjeta-objetivo-header,
+  .meta-card-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .tarjeta-objetivo-acciones {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .tarjeta-objetivo-acciones button {
+    white-space: nowrap;
+  }
+  .tarjeta-objetivo-stats {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  /* Resultado de la calculadora de deudas: las filas con textos largos
+     ("Te ahorrarías X meses y ₡Y en intereses") se apilan en vez de
+     quedar lado a lado y salirse del modal. */
+  .resultado-calculadora-fila {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
   .dash-hero-row { grid-template-columns: 1fr; }
   .grilla-anillos-categoria { grid-template-columns: 1fr; }
   .dash-segmento { padding: 12px 13px; }
@@ -2130,19 +2171,25 @@ button.boton-primario.boton-peligro {
   .fila-rubro-montos, .fila-rubro-pct { grid-column: 2; justify-self: start; }
   .bloque-header-accion { flex-direction: column; align-items: stretch; gap: 10px; }
   .filtros-transacciones { flex-wrap: wrap; }
-  .filtros-transacciones .filtro-select { flex: 1 1 calc(50% - 5px); }
+  /* Selects a media fila apretaban tanto el texto contra la flechita nativa
+     que esta quedaba casi salida del borde derecho; a ancho completo entra
+     holgado (el font-size 16px de arriba es necesario para que iOS no
+     haga zoom, así que la solución acá es dar más ancho, no achicar texto). */
+  .filtros-transacciones .filtro-select { flex: 1 1 100%; }
   .filtros-transacciones #btn-agregar-manual { flex: 1 1 100%; }
 
   .fila-transaccion {
-    grid-template-columns: 1fr auto auto auto;
-    column-gap: 6px;
+    grid-template-columns: 1fr auto;
+    column-gap: 10px;
     row-gap: 4px;
     padding: 10px 12px;
   }
   .fila-transaccion-comercio { grid-column: 1; grid-row: 1; overflow-wrap: anywhere; }
-  .fila-transaccion-monto { grid-column: 2; grid-row: 1; }
-  .fila-transaccion-editar { grid-column: 3; grid-row: 1; align-self: start; }
-  .fila-transaccion-borrar { grid-column: 4; grid-row: 1; align-self: start; }
+  .fila-transaccion-derecha { grid-column: 2; grid-row: 1; gap: 6px; justify-self: end; }
+  .fila-transaccion-derecha .fila-transaccion-monto {
+    font-size: 15.5px;
+    margin-right: 3px;
+  }
   .fila-transaccion-fecha {
     grid-column: 1;
     grid-row: 2;
@@ -2152,7 +2199,7 @@ button.boton-primario.boton-peligro {
   }
   .fila-transaccion .select-categoria,
   .fila-transaccion-sin-categoria {
-    grid-column: 2 / 5;
+    grid-column: 2;
     grid-row: 2;
     justify-self: end;
     font-size: 11px;
