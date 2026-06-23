@@ -253,9 +253,7 @@ def crear_objetivo(user_id):
 def actualizar_objetivo(user_id, objetivo_id):
     data = request.get_json()
     conn = get_connection()
-    # Si no viene en el body, se conserva el valor actual (este modal no siempre
-    # expone la opción de dividir en quincenas; eso se ajusta desde el rubro fijo
-    # derivado, en la pestaña Configurar).
+    # Si no viene en el body, se conserva el valor actual.
     if "dividir_quincenas" in data:
         dividir_quincenas = 1 if data["dividir_quincenas"] else 0
     else:

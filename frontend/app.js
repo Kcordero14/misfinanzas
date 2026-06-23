@@ -1303,7 +1303,7 @@ function renderObjetivos(objetivos, contenedorId, conAcciones) {
         ${conAcciones ? `
         <div class="tarjeta-objetivo-acciones">
           <button class="boton-texto meta-accion-destacada" data-aportar="${o.id}" data-nombre="${o.nombre}" data-moneda="${o.moneda}">+ Aportar</button>
-          <button class="boton-texto meta-accion-suave" data-editar="${o.id}" data-nombre="${o.nombre}" data-monto="${o.monto_total}" data-meses="${o.meses_plazo}" data-moneda="${o.moneda}">Editar</button>
+          <button class="boton-texto meta-accion-suave" data-editar="${o.id}" data-nombre="${o.nombre}" data-monto="${o.monto_total}" data-meses="${o.meses_plazo}" data-moneda="${o.moneda}" data-quincenas="${o.dividir_quincenas}">Editar</button>
           <button class="boton-texto meta-accion-suave" data-borrar="${o.id}">Eliminar</button>
         </div>` : ""}
       </div>
@@ -1345,7 +1345,7 @@ function renderObjetivos(objetivos, contenedorId, conAcciones) {
       btn.addEventListener("click", () => abrirModalAporte(btn.dataset.aportar, btn.dataset.nombre, btn.dataset.moneda))
     );
     cont.querySelectorAll("[data-editar]").forEach((btn) =>
-      btn.addEventListener("click", () => abrirModalEditarObjetivo(btn.dataset.editar, btn.dataset.nombre, btn.dataset.monto, btn.dataset.meses, btn.dataset.moneda))
+      btn.addEventListener("click", () => abrirModalEditarObjetivo(btn.dataset.editar, btn.dataset.nombre, btn.dataset.monto, btn.dataset.meses, btn.dataset.moneda, btn.dataset.quincenas === "1"))
     );
     cont.querySelectorAll("[data-borrar]").forEach((btn) =>
       btn.addEventListener("click", async () => {
@@ -1442,7 +1442,7 @@ document.getElementById("btn-nuevo-objetivo").addEventListener("click", async ()
   });
 });
 
-function abrirModalEditarObjetivo(id, nombre, monto, meses, moneda) {
+function abrirModalEditarObjetivo(id, nombre, monto, meses, moneda, dividirQuincenas) {
   abrirModal(`
     <h3>Editar objetivo</h3>
     <label>Nombre</label>
@@ -1456,6 +1456,10 @@ function abrirModalEditarObjetivo(id, nombre, monto, meses, moneda) {
     </select>
     <label>Plazo en meses</label>
     <input type="number" id="modal-meses" value="${meses}" step="1">
+    <label class="modal-check">
+      <input type="checkbox" id="modal-dividir-quincenas" ${dividirQuincenas ? "checked" : ""}>
+      Dividir el aporte mensual en dos quincenas iguales
+    </label>
     <div class="modal-acciones">
       <button class="boton-secundario" onclick="cerrarModal()">Cancelar</button>
       <button class="boton-primario" id="modal-confirmar">Guardar cambios</button>
@@ -1468,7 +1472,8 @@ function abrirModalEditarObjetivo(id, nombre, monto, meses, moneda) {
     const monto_total = parseFloat(document.getElementById("modal-monto-total").value);
     const nuevaMoneda = document.getElementById("modal-moneda").value;
     const meses_plazo = parseInt(document.getElementById("modal-meses").value);
-    await api(`/objetivos/${id}`, { method: "PUT", body: JSON.stringify({ nombre: nuevoNombre, monto_total, meses_plazo, moneda: nuevaMoneda }) });
+    const dividir_quincenas = document.getElementById("modal-dividir-quincenas").checked;
+    await api(`/objetivos/${id}`, { method: "PUT", body: JSON.stringify({ nombre: nuevoNombre, monto_total, meses_plazo, moneda: nuevaMoneda, dividir_quincenas }) });
     cerrarModal();
     cargarObjetivos();
   });
